@@ -649,3 +649,197 @@ def single_option_downside_short(df, expiry, factor, sd, lookback, skew_percenti
             df.at[i,"positions"] = [{"strike":base_val, "expiry": expiry, "option_type": "call", "size": 0}]
 
     return df
+
+# Reversal
+
+def reversal_upside_long_gu(df, expiry, sd, min_base_change): # min_base_change negative number
+
+    for i in range(len(df)-1):
+
+        base_val = df.loc[i, f"base_val_{expiry}"]
+        dte = df.loc[i, f"DTE_{expiry}"]
+        atm_vol = df.loc[i, f"atm_vol_{expiry}"]/100
+
+        delta_hedge_ratio = get_greeks_ratio(base_val,atm_vol,sd)["call_delta_ratio"]
+        gamma_hedge_ratio = get_greeks_ratio(base_val,atm_vol,sd)["call_gamma_ratio"]
+
+        if df.loc[i, "expiry_date_1"] == df.loc[i+1, "expiry_date_1"] and df.loc[i, f"base_change_{expiry}"] < min_base_change and df.loc[i+1, "base_change_1"] > -0.45:
+                                                
+            df.at[i,"positions"] = [{"strike":base_val*(1+sd*atm_vol*((dte/365)**0.5)), "expiry": expiry, "option_type": "call", "size": 10},
+
+                                    {"strike":base_val, "expiry": expiry, "option_type": "call", "size": -delta_hedge_ratio*10}, # this is the delta hedging component
+                                    {"strike":base_val, "expiry": expiry, "option_type": "put", "size": delta_hedge_ratio*10}]
+
+        else:
+            df.at[i,"positions"] = [{"strike":base_val, "expiry": expiry, "option_type": "call", "size": 0}]
+
+    return df
+
+
+def reversal_downside_long_gu(df, expiry, sd, min_base_change): # min_base_change positive number
+
+
+    for i in range(len(df)-1):
+
+        base_val = df.loc[i, f"base_val_{expiry}"]
+        dte = df.loc[i, f"DTE_{expiry}"]
+        atm_vol = df.loc[i, f"atm_vol_{expiry}"]/100
+
+        delta_hedge_ratio = get_greeks_ratio(base_val,atm_vol,sd)["put_delta_ratio"]
+        gamma_hedge_ratio = get_greeks_ratio(base_val,atm_vol,sd)["put_gamma_ratio"]
+
+        if df.loc[i, "expiry_date_1"] == df.loc[i+1, "expiry_date_1"] and df.loc[i, f"base_change_{expiry}"] > min_base_change and df.loc[i+1, "base_change_1"] > -0.45:
+                                                
+            df.at[i,"positions"] = [{"strike":base_val*(1+sd*atm_vol*((dte/365)**0.5)), "expiry": expiry, "option_type": "put", "size": 10},
+                                    {"strike":base_val, "expiry": expiry, "option_type": "call", "size": delta_hedge_ratio*10}, # this is the delta hedging component
+                                    {"strike":base_val, "expiry": expiry, "option_type": "put", "size": -delta_hedge_ratio*10}]
+
+        else:
+            df.at[i,"positions"] = [{"strike":base_val, "expiry": expiry, "option_type": "call", "size": 0}]
+
+    return df
+
+def reversal_upside_long(df, expiry, sd, min_base_change): # min_base_change negative number
+
+    for i in range(len(df)-1):
+
+        base_val = df.loc[i, f"base_val_{expiry}"]
+        dte = df.loc[i, f"DTE_{expiry}"]
+        atm_vol = df.loc[i, f"atm_vol_{expiry}"]/100
+
+        delta_hedge_ratio = get_greeks_ratio(base_val,atm_vol,sd)["call_delta_ratio"]
+        gamma_hedge_ratio = get_greeks_ratio(base_val,atm_vol,sd)["call_gamma_ratio"]
+
+        if df.loc[i, "expiry_date_1"] == df.loc[i+1, "expiry_date_1"] and df.loc[i, f"base_change_{expiry}"] < min_base_change and df.loc[i+1, "base_change_1"] > -0.45:
+                                                
+            df.at[i,"positions"] = [{"strike":base_val*(1+sd*atm_vol*((dte/365)**0.5)), "expiry": expiry, "option_type": "call", "size": 10},
+
+                                    {"strike":base_val, "expiry": expiry, "option_type": "call", "size": -delta_hedge_ratio*10-gamma_hedge_ratio*5}, # this is the delta hedging component
+                                    {"strike":base_val, "expiry": expiry, "option_type": "put", "size": delta_hedge_ratio*10-gamma_hedge_ratio*5}]
+
+        else:
+            df.at[i,"positions"] = [{"strike":base_val, "expiry": expiry, "option_type": "call", "size": 0}]
+
+    return df
+
+
+def reversal_downside_long(df, expiry, sd, min_base_change): # min_base_change positive number
+
+
+    for i in range(len(df)-1):
+
+        base_val = df.loc[i, f"base_val_{expiry}"]
+        dte = df.loc[i, f"DTE_{expiry}"]
+        atm_vol = df.loc[i, f"atm_vol_{expiry}"]/100
+
+        delta_hedge_ratio = get_greeks_ratio(base_val,atm_vol,sd)["put_delta_ratio"]
+        gamma_hedge_ratio = get_greeks_ratio(base_val,atm_vol,sd)["put_gamma_ratio"]
+
+        if df.loc[i, "expiry_date_1"] == df.loc[i+1, "expiry_date_1"] and df.loc[i, f"base_change_{expiry}"] > min_base_change and df.loc[i+1, "base_change_1"] > -0.45:
+                                                
+            df.at[i,"positions"] = [{"strike":base_val*(1+sd*atm_vol*((dte/365)**0.5)), "expiry": expiry, "option_type": "put", "size": 10},
+                                    
+                                    {"strike":base_val, "expiry": expiry, "option_type": "call", "size": delta_hedge_ratio*10-gamma_hedge_ratio*5}, # this is the delta hedging component
+                                    {"strike":base_val, "expiry": expiry, "option_type": "put", "size": -delta_hedge_ratio*10-gamma_hedge_ratio*5}]
+
+        else:
+            df.at[i,"positions"] = [{"strike":base_val, "expiry": expiry, "option_type": "call", "size": 0}]
+
+    return df
+
+# Continuation
+
+def continuation_upside_long_gu(df, expiry, sd, min_base_change):
+
+    for i in range(len(df)-1):
+
+        base_val = df.loc[i, f"base_val_{expiry}"]
+        dte = df.loc[i, f"DTE_{expiry}"]
+        atm_vol = df.loc[i, f"atm_vol_{expiry}"]/100
+
+        delta_hedge_ratio = get_greeks_ratio(base_val,atm_vol,sd)["call_delta_ratio"]
+        gamma_hedge_ratio = get_greeks_ratio(base_val,atm_vol,sd)["call_gamma_ratio"]
+
+        if df.loc[i, "expiry_date_1"] == df.loc[i+1, "expiry_date_1"] and df.loc[i, f"base_change_{expiry}"] > min_base_change and df.loc[i+1, "base_change_1"] > -0.45:
+                                                
+            df.at[i,"positions"] = [{"strike":base_val*(1+sd*atm_vol*((dte/365)**0.5)), "expiry": expiry, "option_type": "call", "size": 10},
+
+                                    {"strike":base_val, "expiry": expiry, "option_type": "call", "size": -delta_hedge_ratio*10}, # this is the delta hedging component
+                                    {"strike":base_val, "expiry": expiry, "option_type": "put", "size": delta_hedge_ratio*10}]
+
+        else:
+            df.at[i,"positions"] = [{"strike":base_val, "expiry": expiry, "option_type": "call", "size": 0}]
+
+    return df
+
+
+def continuation_downside_long_gu(df, expiry, sd, min_base_change):
+
+
+    for i in range(len(df)-1):
+
+        base_val = df.loc[i, f"base_val_{expiry}"]
+        dte = df.loc[i, f"DTE_{expiry}"]
+        atm_vol = df.loc[i, f"atm_vol_{expiry}"]/100
+
+        delta_hedge_ratio = get_greeks_ratio(base_val,atm_vol,sd)["put_delta_ratio"]
+        gamma_hedge_ratio = get_greeks_ratio(base_val,atm_vol,sd)["put_gamma_ratio"]
+
+        if df.loc[i, "expiry_date_1"] == df.loc[i+1, "expiry_date_1"] and df.loc[i, f"base_change_{expiry}"] < min_base_change and df.loc[i+1, "base_change_1"] > -0.45:
+                                                
+            df.at[i,"positions"] = [{"strike":base_val*(1+sd*atm_vol*((dte/365)**0.5)), "expiry": expiry, "option_type": "put", "size": 10},
+                                    {"strike":base_val, "expiry": expiry, "option_type": "call", "size": delta_hedge_ratio*10}, # this is the delta hedging component
+                                    {"strike":base_val, "expiry": expiry, "option_type": "put", "size": -delta_hedge_ratio*10}]
+
+        else:
+            df.at[i,"positions"] = [{"strike":base_val, "expiry": expiry, "option_type": "call", "size": 0}]
+
+    return df
+
+def continuation_upside_long(df, expiry, sd, min_base_change):
+
+    for i in range(len(df)-1):
+
+        base_val = df.loc[i, f"base_val_{expiry}"]
+        dte = df.loc[i, f"DTE_{expiry}"]
+        atm_vol = df.loc[i, f"atm_vol_{expiry}"]/100
+
+        delta_hedge_ratio = get_greeks_ratio(base_val,atm_vol,sd)["call_delta_ratio"]
+        gamma_hedge_ratio = get_greeks_ratio(base_val,atm_vol,sd)["call_gamma_ratio"]
+
+        if df.loc[i, "expiry_date_1"] == df.loc[i+1, "expiry_date_1"] and df.loc[i, f"base_change_{expiry}"] > min_base_change and df.loc[i+1, "base_change_1"] > -0.45:
+                                                
+            df.at[i,"positions"] = [{"strike":base_val*(1+sd*atm_vol*((dte/365)**0.5)), "expiry": expiry, "option_type": "call", "size": 10},
+
+                                    {"strike":base_val, "expiry": expiry, "option_type": "call", "size": -delta_hedge_ratio*10-gamma_hedge_ratio*5}, # this is the delta hedging component
+                                    {"strike":base_val, "expiry": expiry, "option_type": "put", "size": delta_hedge_ratio*10-gamma_hedge_ratio*5}]
+
+        else:
+            df.at[i,"positions"] = [{"strike":base_val, "expiry": expiry, "option_type": "call", "size": 0}]
+
+    return df
+
+
+def continuation_downside_long(df, expiry, sd, min_base_change):
+
+
+    for i in range(len(df)-1):
+
+        base_val = df.loc[i, f"base_val_{expiry}"]
+        dte = df.loc[i, f"DTE_{expiry}"]
+        atm_vol = df.loc[i, f"atm_vol_{expiry}"]/100
+
+        delta_hedge_ratio = get_greeks_ratio(base_val,atm_vol,sd)["put_delta_ratio"]
+        gamma_hedge_ratio = get_greeks_ratio(base_val,atm_vol,sd)["put_gamma_ratio"]
+
+        if df.loc[i, "expiry_date_1"] == df.loc[i+1, "expiry_date_1"] and df.loc[i, f"base_change_{expiry}"] < min_base_change and df.loc[i+1, "base_change_1"] > -0.45:
+                                                
+            df.at[i,"positions"] = [{"strike":base_val*(1+sd*atm_vol*((dte/365)**0.5)), "expiry": expiry, "option_type": "put", "size": 10},
+                                    
+                                    {"strike":base_val, "expiry": expiry, "option_type": "call", "size": delta_hedge_ratio*10-gamma_hedge_ratio*5}, # this is the delta hedging component
+                                    {"strike":base_val, "expiry": expiry, "option_type": "put", "size": -delta_hedge_ratio*10-gamma_hedge_ratio*5}]
+
+        else:
+            df.at[i,"positions"] = [{"strike":base_val, "expiry": expiry, "option_type": "call", "size": 0}]
+
+    return df
